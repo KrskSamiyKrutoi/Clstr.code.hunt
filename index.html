@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ввод ключей | Кластер</title>
-    <!-- Подключаем библиотеку для MD5 -->
+    <!-- Подключаем надежную библиотеку шифрования CryptoJS из надежного CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
         body {
@@ -103,12 +103,12 @@
     
     <div class="input-group">
         <label for="textInput">Код из букв (4 символа):</label>
-        <input type="text" id="textInput" maxlength="4" placeholder="AAAA" oninput="validateText(this)">
+        <input type="text" id="textInput" maxlength="4" placeholder="AAAA">
     </div>
 
     <div class="input-group">
         <label for="numberInput">Код из цифр (7 символов):</label>
-        <input type="text" id="numberInput" maxlength="7" placeholder="0000000" oninput="validateNumber(this)">
+        <input type="text" id="numberInput" maxlength="7" placeholder="0000000">
     </div>
 
     <button onclick="checkCodes()">ОТПРАВИТЬ</button>
@@ -131,39 +131,47 @@
         }
     };
 
-    function validateText(input) {
-        input.value = input.value.replace(/[^a-zA-Zа-яА-ЯёЁ]/g, '');
-    }
-
-    function validateNumber(input) {
-        input.value = input.value.replace(/[^0-9]/g, '');
-    }
-
     function checkCodes() {
-        const textVal = document.getElementById('textInput').value.trim().toUpperCase();
-        const numVal = document.getElementById('numberInput').value.trim();
+        let textInput = document.getElementById('textInput').value.trim().toUpperCase();
+        let numInput = document.getElementById('numberInput').value.trim();
         const msg = document.getElementById('message');
 
-        if (textVal.length !== 4) {
+        // Авто-перевод русской "КРСК" в английскую "KRSK"
+        const ruToEn = {'К':'K', 'Р':'R', 'С':'S'};
+        textInput = textInput.split('').map(char => ruToEn[char] || char).join('');
+
+        if (textInput.length !== 4) {
             msg.className = 'error';
             msg.innerText = 'В первом поле должно быть ровно 4 буквы!';
             return;
         }
 
-        if (numVal.length !== 7) {
+        if (numInput.length !== 7) {
             msg.className = 'error';
             msg.innerText = 'Во втором поле должно быть ровно 7 цифр!';
             return;
         }
 
-        // Хешируем ввод пользователя
-        const textHash = CryptoJS.MD5(textVal).toString();
-        const numHash = CryptoJS.MD5(numVal).toString();
+        // Проверяем, успела ли подгрузиться библиотека шифрования
+        if (typeof CryptoJS === "undefined") {
+            msg.className = 'error';
+            msg.innerText = 'Ошибка сети. Проверь интернет или отключи VPN!';
+            return;
+        }
 
-        // Хеш для "KRSK"
-        const targetTextHash = "6c21e51f0f188352b217dc3e0a29efaa";
-        // Хеш для "9047064"
-        const targetNumHash = "094d4ec1135ef52bc05164cf3745281b";
+        // Хеширование с секретной "солью"
+        const salt = "CLSTR_SECRET_2026_SALT";
+        
+        // Преобразуем ввод по секретной формуле
+        const processedText = textInput.split('').reverse().join('') + salt;
+        const processedNum = numInput + salt;
+
+        const textHash = CryptoJS.SHA256(processedText).toString();
+        const numHash = CryptoJS.SHA256(processedNum).toString();
+
+        // Нераскодируемые хеши
+        const targetTextHash = "121f64f434032d8fe1b98bceaafece9a25b2f2930bf4ed9d0eecddf500e572e4";
+        const targetNumHash = "f2a24fa68beebc927f8702bafdb772ea428bfd763ef4e4b5003f9055cd91a136";
 
         if (textHash === targetTextHash && numHash === targetNumHash) {
             msg.className = 'success';
