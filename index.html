@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ввод ключей | Кластер</title>
+    <!-- Подключаем библиотеку для MD5 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            user-select: none;
+        }
+        .container {
+            background-color: #1e1e1e;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            text-align: center;
+            width: 320px;
+        }
+        h2 {
+            margin-bottom: 20px;
+            color: #5865F2;
+        }
+        .input-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #bbb;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #333;
+            background-color: #2b2b2b;
+            color: #fff;
+            font-size: 16px;
+            box-sizing: border-box;
+            outline: none;
+            text-transform: uppercase;
+        }
+        input:focus {
+            border-color: #5865F2;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #5865F2;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: 0.2s;
+        }
+        button:hover {
+            background-color: #4752C4;
+        }
+        #message {
+            margin-top: 15px;
+            font-weight: bold;
+            font-size: 14px;
+            word-break: break-all;
+        }
+        .error { color: #ff4d4d; }
+        .success { color: #4dff88; }
+        .hint {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #2b2b2b;
+            border-left: 3px solid #5865F2;
+            font-size: 12px;
+            color: #aaa;
+            text-align: left;
+            line-height: 1.4;
+        }
+        a.bot-link {
+            color: #5865F2;
+            text-decoration: underline;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body oncontextmenu="return false;">
+
+<div class="container">
+    <h2>Проверка Кода</h2>
+    
+    <div class="input-group">
+        <label for="textInput">Код из букв (4 символа):</label>
+        <input type="text" id="textInput" maxlength="4" placeholder="AAAA" oninput="validateText(this)">
+    </div>
+
+    <div class="input-group">
+        <label for="numberInput">Код из цифр (7 символов):</label>
+        <input type="text" id="numberInput" maxlength="7" placeholder="0000000" oninput="validateNumber(this)">
+    </div>
+
+    <button onclick="checkCodes()">ОТПРАВИТЬ</button>
+
+    <div id="message"></div>
+
+    <div class="hint">
+        <strong>Подсказка:</strong><br>
+        6&7, интересные цифры, многими ненавистные в их сочетании, жаль их нельзя найти в Майнкрафт, или можно?
+    </div>
+</div>
+
+<script>
+    // Блокировка хоткеев разработчика
+    document.onkeydown = function(e) {
+        if (e.keyCode == 123 || 
+           (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74)) || 
+           (e.ctrlKey && e.keyCode == 85)) {
+            return false;
+        }
+    };
+
+    function validateText(input) {
+        input.value = input.value.replace(/[^a-zA-Zа-яА-ЯёЁ]/g, '');
+    }
+
+    function validateNumber(input) {
+        input.value = input.value.replace(/[^0-9]/g, '');
+    }
+
+    function checkCodes() {
+        const textVal = document.getElementById('textInput').value.trim().toUpperCase();
+        const numVal = document.getElementById('numberInput').value.trim();
+        const msg = document.getElementById('message');
+
+        if (textVal.length !== 4) {
+            msg.className = 'error';
+            msg.innerText = 'В первом поле должно быть ровно 4 буквы!';
+            return;
+        }
+
+        if (numVal.length !== 7) {
+            msg.className = 'error';
+            msg.innerText = 'Во втором поле должно быть ровно 7 цифр!';
+            return;
+        }
+
+        // Хешируем ввод пользователя
+        const textHash = CryptoJS.MD5(textVal).toString();
+        const numHash = CryptoJS.MD5(numVal).toString();
+
+        // Хеш для "KRSK"
+        const targetTextHash = "6c21e51f0f188352b217dc3e0a29efaa";
+        // Хеш для "9047064"
+        const targetNumHash = "094d4ec1135ef52bc05164cf3745281b";
+
+        if (textHash === targetTextHash && numHash === targetNumHash) {
+            msg.className = 'success';
+            msg.innerHTML = 'Reward is waiting just for u...<br><br><a href="https://t.me/ClstrCodeHunt_Bot" target="_blank" class="bot-link">https://t.me/ClstrCodeHunt_Bot</a>';
+        } else {
+            msg.className = 'error';
+            msg.innerText = 'Неверный код! Попробуй еще раз.';
+        }
+    }
+</script>
+
+</body>
+</html>
