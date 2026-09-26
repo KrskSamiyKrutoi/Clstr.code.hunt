@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ввод ключей | Кластер</title>
+    <title>Code Verification | Cluster</title>
     <style>
         body {
             background-color: #121212;
@@ -77,66 +77,101 @@
         }
         .error { color: #ff4d4d; }
         .success { color: #4dff88; }
-        #debug {
-            margin-top: 15px;
-            font-family: monospace;
-            font-size: 11px;
-            color: #888;
-            text-align: left;
-            background: #111;
+        .hint {
+            margin-top: 20px;
             padding: 10px;
-            border-radius: 6px;
-            word-break: break-all;
+            background-color: #2b2b2b;
+            border-left: 3px solid #5865F2;
+            font-size: 12px;
+            color: #aaa;
+            text-align: left;
+            line-height: 1.4;
+        }
+        a.bot-link {
+            color: #5865F2;
+            text-decoration: underline;
+            font-weight: bold;
         }
     </style>
 </head>
-<body>
+<body oncontextmenu="return false;">
 
 <div class="container">
-    <h2>Проверка Кода</h2>
+    <h2>Code Verification</h2>
     
     <div class="input-group">
-        <label for="textInput">Код из букв (4 символа):</label>
+        <label for="textInput">Letter Code (4 characters):</label>
         <input type="text" id="textInput" maxlength="4" placeholder="AAAA">
     </div>
 
     <div class="input-group">
-        <label for="numberInput">Код из цифр (7 символов):</label>
+        <label for="numberInput">Number Code (7 digits):</label>
         <input type="text" id="numberInput" maxlength="7" placeholder="0000000">
     </div>
 
-    <button onclick="checkCodes()">ОТПРАВИТЬ</button>
+    <button onclick="checkCodes()">SUBMIT</button>
 
     <div id="message"></div>
-    <div id="debug"></div>
+
+    <div class="hint">
+        <strong>Hint:</strong><br>
+        6&7, interesting numbers, many hate their combination, pity they can't be found in Minecraft, or can they?
+    </div>
 </div>
 
 <script>
-    function checkCodes() {
+    // Disable dev hotkeys
+    document.onkeydown = function(e) {
+        if (e.keyCode == 123 || 
+           (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74)) || 
+           (e.ctrlKey && e.keyCode == 85)) {
+            return false;
+        }
+    };
+
+    // SHA-256 hashing
+    async function sha256(message) {
+        const msgBuffer = new TextEncoder().encode(message);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function checkCodes() {
         let textVal = document.getElementById('textInput').value.trim().toUpperCase();
         let numVal = document.getElementById('numberInput').value.trim();
         const msg = document.getElementById('message');
-        const debug = document.getElementById('debug');
 
-        // Автозамена русской раскладки КРСК на английскую KRSK
+        // Auto-fix Cyrillic layout to English (КРСК -> KRSK)
         const ruToEn = {'К':'K', 'Р':'R', 'С':'S'};
         textVal = textVal.split('').map(char => ruToEn[char] || char).join('');
 
-        // Преобразуем ввод в прямые коды символов
-        let textChars = [];
-        for(let i=0; i<textVal.length; i++) textChars.push(textVal.charCodeAt(i));
+        if (textVal.length !== 4) {
+            msg.className = 'error';
+            msg.innerText = 'First field must contain exactly 4 letters!';
+            return;
+        }
 
-        let debugInfo = `Ввод букв: "${textVal}" (длина: ${textVal.length}, коды: ${textChars.join(',')})<br>`;
-        debugInfo += `Ввод цифр: "${numVal}" (длина: ${numVal.length})<br>`;
+        if (numVal.length !== 7) {
+            msg.className = 'error';
+            msg.innerText = 'Second field must contain exactly 7 digits!';
+            return;
+        }
 
-        if (textVal === "KRSK" && numVal === "9047064") {
+        const salt = "CLSTR_EVENT_SECURE_2026";
+
+        const textHash = await sha256(textVal + salt);
+        const numHash = await sha256(numVal + salt);
+
+        const targetTextHash = "12ed1916eb4dfa77cbbcfdd47d4e4e94b293ca77c5fb22067bc8be65e06579cf";
+        const targetNumHash = "f918ee0851888a7c2fe1bcbd6bb8a83d73f15923bcbb2f974eb066974fbffcd9";
+
+        if (textHash === targetTextHash && numHash === targetNumHash) {
             msg.className = 'success';
-            msg.innerHTML = 'Reward is waiting just for u...<br><br><a href="https://t.me/ClstrCodeHunt_Bot" target="_blank" style="color:#5865F2">https://t.me/ClstrCodeHunt_Bot</a>';
-            debug.innerHTML = debugInfo + "<b style='color:#4dff88'>Сравнение прошло успешно!</b>";
+            msg.innerHTML = 'Reward is waiting just for u...<br><br><a href="https://t.me/ClstrCodeHunt_Bot" target="_blank" class="bot-link">https://t.me/ClstrCodeHunt_Bot</a>';
         } else {
             msg.className = 'error';
-            msg.innerText = 'Неверный код! Попробуй еще раз.';
-            debug.innerHTML = debugInfo + "<b style='color:#ff4d4d'>Ошибка: совпадения нет.</b>";
+            msg.innerText = 'Invalid code! Try again.';
         }
     }
 </script>
